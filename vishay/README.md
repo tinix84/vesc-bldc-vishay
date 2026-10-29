@@ -8,8 +8,13 @@ The firmware baseline is upstream VESC commit `4b4dd3062dcbb3dbdd188b8dd2d3e6b88
 
 The portable RAIK060 SPI protocol driver has host tests.
 The VESC custom-encoder adapter requires hardware integration and bench tests.
-The board worksheet contains unresolved values.
-The hardware header intentionally stops compilation until the pin map and electrical values are reviewed.
+The provisional hardware code configures GPIO ownership, current ADC channels, nominal scaling, and encoder SPI callbacks.
+Host tests check that gate enable stays low and PWM pads stay inputs.
+The worksheet records 41 GPIO assignments with MCU pads, PCB net names, and verification status.
+
+The existing board has no established phase-voltage sensing or VDDA supply feed.
+Schematic/PCB parity, the NTC curve, sensor framing, and power-stage limits remain unresolved.
+The hardware header intentionally stops compilation until these requirements are resolved.
 Do not flash this placeholder target or energize an unverified power stage.
 
 This directory contains firmware support and draft configuration templates.
@@ -32,6 +37,7 @@ The final command checks the draft worksheet structure.
 It does not confirm that the board is ready for use.
 Before a hardware build, complete `vishay/board/project.toml` and `vishay/board/pinmap.csv`.
 Then run the validator without `--allow-tbd`.
+Strict validation currently fails for the recorded hardware and release blockers.
 
 ## Hardware integration
 

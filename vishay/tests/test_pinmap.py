@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -26,6 +28,39 @@ class PinMapValidationTests(unittest.TestCase):
         rows[1]["pin"] = rows[0]["pin"]
         errors = MODULE.validate(project, rows, allow_tbd=False)
         self.assertTrue(any("assigned more than once" in error for error in errors))
+
+    def test_required_nc_is_rejected(self) -> None:
+        project, rows = MODULE.load_inputs(ROOT / "board" / "project.toml", ROOT / "board" / "pinmap.csv")
+        rows = [dict(row, pin="NC") if row["signal"] == "phase_u_voltage" else row for row in rows]
+        errors = MODULE.validate(project, rows, allow_tbd=False)
+        self.assertTrue(any("phase_u_voltage: required pin is still NC" in error for error in errors))
+
+    def test_duplicate_signal_is_rejected_even_during_draft(self) -> None:
+        project, rows = MODULE.load_inputs(ROOT / "board" / "project.toml", ROOT / "board" / "pinmap.csv")
+        errors = MODULE.validate(project, rows + [dict(rows[0])], allow_tbd=True)
+        self.assertTrue(any("duplicate signal row" in error for error in errors))
+
+    def test_assigned_required_pin_needs_known_resource(self) -> None:
+        project, rows = MODULE.load_inputs(ROOT / "board" / "project.toml", ROOT / "board" / "pinmap.csv")
+        rows = [dict(row, pin="PA8", peripheral="TBD") if row["signal"] == "pwm_u_high" else row for row in rows]
+        errors = MODULE.validate(project, rows, allow_tbd=True)
+        self.assertTrue(any("pwm_u_high: peripheral/resource is unresolved" in error for error in errors))
+
+    def test_review_blockers_are_not_hidden_by_complete_pin_rows(self) -> None:
+        project, rows = MODULE.load_inputs(ROOT / "board" / "project.toml", ROOT / "board" / "pinmap.csv")
+        errors = MODULE.validate(project, rows, allow_tbd=False)
+        self.assertTrue(any("hardware_review.vdda_feed_verified is not verified" in error for error in errors))
+        self.assertTrue(any("RAIK060 frame kind is not verified" in error for error in errors))
+        self.assertTrue(any("PCB NTC curve is still TBD" in error for error in errors))
+
+    @unittest.skipUnless(shutil.which("cc"), "C preprocessor unavailable")
+    def test_firmware_header_refuses_unreviewed_target(self) -> None:
+        result = subprocess.run(
+            ["cc", "-E", "-x", "c", str(ROOT / "port/vesc/hwconf/hw_vishay_vesc.h")],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Vishay port blocked: phase-voltage sensing", result.stderr)
 
 
 if __name__ == "__main__":
