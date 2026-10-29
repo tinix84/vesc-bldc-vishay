@@ -1,0 +1,44 @@
+signal,requirement,pin,peripheral,electrical,connector,notes
+pwm_u_high,core,TBD,TBD,3.3V push-pull,,Advanced timer complementary PWM with dead-time and break
+pwm_u_low,core,TBD,TBD,3.3V push-pull,,Same advanced timer as all phase PWM signals
+pwm_v_high,core,TBD,TBD,3.3V push-pull,,Advanced timer complementary PWM with dead-time and break
+pwm_v_low,core,TBD,TBD,3.3V push-pull,,Same advanced timer as all phase PWM signals
+pwm_w_high,core,TBD,TBD,3.3V push-pull,,Advanced timer complementary PWM with dead-time and break
+pwm_w_low,core,TBD,TBD,3.3V push-pull,,Same advanced timer as all phase PWM signals
+gate_enable,core,TBD,GPIO,3.3V push-pull,,Must default safely off during reset
+gate_fault,core,TBD,GPIO/EXTI,Check gate-driver level,,Prefer timer break input where possible
+current_u,core,TBD,ADC injected,Analog 0-3.3V,,Simultaneous/current-control ADC group
+current_v,core,TBD,ADC injected,Analog 0-3.3V,,Simultaneous/current-control ADC group
+current_w,core,TBD,ADC injected,Analog 0-3.3V,,Third shunt strongly recommended
+phase_u_voltage,core,TBD,ADC,Analog 0-3.3V,,Divider and filtering must match VESC macros
+phase_v_voltage,core,TBD,ADC,Analog 0-3.3V,,Divider and filtering must match VESC macros
+phase_w_voltage,core,TBD,ADC,Analog 0-3.3V,,Divider and filtering must match VESC macros
+dc_bus_voltage,core,TBD,ADC,Analog 0-3.3V,,Divider must tolerate maximum bus voltage and transients
+mosfet_temperature,core,TBD,ADC,Analog 0-3.3V,,Place near hottest MOSFET
+motor_temperature,recommended,TBD,ADC,Analog 0-3.3V,motor,Support common NTC/PTC options
+can_rx,core,TBD,CAN_RX,3.3V logic,CAN,Use CAN transceiver and termination option
+can_tx,core,TBD,CAN_TX,3.3V logic,CAN,Use CAN transceiver and termination option
+usb_dm,core,TBD,USB_DM,USB 2.0 FS,USB,Keep controlled differential routing
+usb_dp,core,TBD,USB_DP,USB 2.0 FS,USB,Keep controlled differential routing
+swdio,core,TBD,SWDIO,3.3V,debug,Do not consume during first bring-up
+swclk,core,TBD,SWCLK,3.3V,debug,Do not consume during first bring-up
+hall_1,if_halls,TBD,GPIO/timer,Input with correct level shifting,motor,Keep separate from encoder pins for simultaneous diagnostics
+hall_2,if_halls,TBD,GPIO/timer,Input with correct level shifting,motor,Keep separate from encoder pins for simultaneous diagnostics
+hall_3,if_halls,TBD,GPIO/timer,Input with correct level shifting,motor,Keep separate from encoder pins for simultaneous diagnostics
+raik060_biss_clock,if_bissc,TBD,SPI_SCK,3.3V logic to RS-422 driver,RAIK060,MA differential pair is on sensor side of transceiver
+raik060_biss_data,if_bissc,TBD,SPI_MISO,3.3V logic from RS-422 receiver,RAIK060,SLO differential pair is on sensor side of transceiver
+raik060_biss_mosi_reserve,if_bissc,TBD,SPI_MOSI,3.3V logic,,Reserved by current VESC BiSS-C configuration
+raik060_biss_nss_reserve,if_bissc,TBD,SPI_NSS,3.3V push-pull,,Reserved by current VESC BiSS-C configuration
+raik060_spi_clock,if_spi,TBD,SPI_SCK or GPIO,3.3V LVTTL,RAIK060,100 kHz to 3 MHz mode 1
+raik060_spi_data_in,if_spi,TBD,SPI_MISO or GPIO,3.3V LVTTL,RAIK060,Sensor MISO
+raik060_spi_chip_select,if_spi,TBD,SPI_NSS or GPIO,3.3V LVTTL,RAIK060,Active low
+raik060_spi_data_out,recommended,TBD,SPI_MOSI or GPIO,3.3V LVTTL,RAIK060,Optional for simple reads but needed for commands and registers
+uart_tx,recommended,TBD,USART_TX,3.3V logic,COMM,Expose with ground and protected supply
+uart_rx,recommended,TBD,USART_RX,3.3V logic,COMM,Expose with ground and protected supply
+adc_external_1,recommended,TBD,ADC,Analog 0-3.3V,COMM,Protected general-purpose analogue input
+adc_external_2,recommended,TBD,ADC,Analog 0-3.3V,COMM,Protected general-purpose analogue input
+i2c_scl,recommended,TBD,I2C_SCL,3.3V open-drain,AUX,Optional IMU or expansion bus
+i2c_sda,recommended,TBD,I2C_SDA,3.3V open-drain,AUX,Optional IMU or expansion bus
+estop_brake,recommended,TBD,GPIO/EXTI,Protected digital input,AUX,Independent torque-inhibit or brake input
+status_led,recommended,TBD,GPIO,3.3V push-pull,,Bring-up and fault indication
+

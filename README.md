@@ -1,3 +1,17 @@
+# Vishay VESC firmware variant
+
+This repository is a development fork of [vedderb/bldc](https://github.com/vedderb/bldc).
+Vishay support starts from upstream commit `4b4dd3062dcbb3dbdd188b8dd2d3e6b88ad69da8`.
+
+**Status: experimental framework. The Vishay hardware target is incomplete and intentionally fails compilation.**
+This fork does not provide a validated Vishay firmware binary.
+
+See [Vishay support, host tests, and integration](vishay/README.md).
+
+The upstream VESC documentation follows.
+
+---
+
 # VESC firmware
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)

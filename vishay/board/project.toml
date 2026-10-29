@@ -1,0 +1,13 @@
+status = "draft"
+board_name = "Vishay VESC"
+mcu = "TBD"
+mcu_package = "TBD"
+power_stage_voltage_max = "TBD"
+phase_current_max = "TBD"
+
+[raik060]
+# Choose exactly one of: "bissc", "spi". BiSS-C is recommended for a new board.
+protocol = "TBD"
+multiturn = false
+coexist_with_motor_halls = true
+
