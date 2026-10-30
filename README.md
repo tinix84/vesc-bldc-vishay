@@ -3,7 +3,9 @@
 This repository is a development fork of [vedderb/bldc](https://github.com/vedderb/bldc).
 Vishay support starts from upstream commit `4b4dd3062dcbb3dbdd188b8dd2d3e6b88ad69da8`.
 
-**Status: experimental framework. The Vishay hardware target is incomplete and intentionally fails compilation.**
+**Status: encoder-only FOC implemented for software review. The Vishay hardware target intentionally fails compilation.**
+The restricted profile uses the absolute encoder without phase-voltage sensors or observer fallback.
+The schematic remains unchanged, and gates remain disabled pending actual VDDA verification and protection review.
 This fork does not provide a validated Vishay firmware binary.
 
 See [Vishay support, host tests, and integration](vishay/README.md).

@@ -12,6 +12,17 @@
 #define HW_HAS_DRV8301
 #define HW_HAS_3_SHUNTS
 #define HW_HAS_PHASE_SHUNTS
+#define HW_ENCODER_ONLY_FOC
+
+/* Deliberately no phase ADC aliases. The restricted core must compile without them. */
+#define MCCONF_DEFAULT_MOTOR_TYPE MOTOR_TYPE_FOC
+#define MCCONF_FOC_SENSOR_MODE FOC_SENSOR_MODE_ENCODER
+#define MCCONF_M_SENSOR_PORT_MODE SENSOR_PORT_MODE_CUSTOM_ENCODER
+#define MCCONF_FOC_PHASE_FILTER_ENABLE false
+#define MCCONF_FOC_FW_CURRENT_MAX 0.0
+#define MCCONF_FOC_CC_DECOUPLING FOC_CC_DECOUPLING_DISABLED
+#define MCCONF_FOC_OFFSETS_CAL_MODE 1
+#define MCCONF_FOC_SPEED_SOURCE FOC_SPEED_SRC_CORRECTED
 
 #define HW_GATE_ENABLE_GPIO GPIOB
 #define HW_GATE_ENABLE_PIN 5
@@ -86,5 +97,6 @@
 /* BMI270 PB2=SCL / PA15=SDA remains disabled; no BMI160 alias. */
 void hw_vishay_early_init(void);
 raik060_bus_t hw_vishay_raik060_bus(void);
+bool hw_vishay_start_encoder(raik060_frame_kind_t frame_kind);
 
 #endif

@@ -5,6 +5,12 @@ mcu_package = "LQFP64"
 power_stage_voltage_max = "TBD"
 phase_current_max = "TBD"
 
+[control]
+profile = "encoder_only_foc"
+observer_fallback = false
+phase_voltage_measurements = false
+gates_enabled = false
+
 [raik060]
 # Board wiring supports GPIO SPI. Confirm the purchased sensor before sampling.
 protocol = "spi"

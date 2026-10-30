@@ -6,6 +6,7 @@
 #include "hw.h"
 #include "hal.h"
 #include "timer.h"
+#include "../raik060_vesc.h"
 #include <stddef.h>
 
 void hw_vishay_early_init(void) {
@@ -117,5 +118,18 @@ raik060_bus_t hw_vishay_raik060_bus(void) {
         .delay_us = delay_us,
         .half_period_us = 1U,
     };
+}
+
+bool hw_vishay_start_encoder(raik060_frame_kind_t frame_kind) {
+    const raik060_vesc_config_t config = {
+        .bus = hw_vishay_raik060_bus(),
+        .frame_kind = frame_kind,
+        .sample_period_us = 100U,
+        .startup_delay_ms = 160U,
+        .consecutive_errors_before_fault = 1U,
+        .max_sample_age_us = 1000U,
+    };
+    /* Frame choice must come from the confirmed part, not connector wiring. */
+    return raik060_vesc_start(&config);
 }
 

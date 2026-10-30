@@ -31,9 +31,21 @@ class PinMapValidationTests(unittest.TestCase):
 
     def test_required_nc_is_rejected(self) -> None:
         project, rows = MODULE.load_inputs(ROOT / "board" / "project.toml", ROOT / "board" / "pinmap.csv")
-        rows = [dict(row, pin="NC") if row["signal"] == "phase_u_voltage" else row for row in rows]
+        rows = [dict(row, pin="NC") if row["signal"] == "gate_enable" else row for row in rows]
         errors = MODULE.validate(project, rows, allow_tbd=False)
-        self.assertTrue(any("phase_u_voltage: required pin is still NC" in error for error in errors))
+        self.assertTrue(any("gate_enable: required pin is still NC" in error for error in errors))
+
+    def test_encoder_only_profile_does_not_require_phase_adc(self) -> None:
+        project, rows = MODULE.load_inputs(ROOT / "board" / "project.toml", ROOT / "board" / "pinmap.csv")
+        errors = MODULE.validate(project, rows, allow_tbd=False)
+        self.assertFalse(any(error.startswith("phase_") or "phase_voltage_sensing_available" in error for error in errors))
+        self.assertTrue(any("vdda_feed_verified" in error for error in errors))
+
+    def test_standard_profile_still_requires_phase_adc(self) -> None:
+        project, rows = MODULE.load_inputs(ROOT / "board" / "project.toml", ROOT / "board" / "pinmap.csv")
+        project["control"]["profile"] = "standard"
+        errors = MODULE.validate(project, rows, allow_tbd=False)
+        self.assertTrue(any(error.startswith("phase_u_voltage:") for error in errors))
 
     def test_duplicate_signal_is_rejected_even_during_draft(self) -> None:
         project, rows = MODULE.load_inputs(ROOT / "board" / "project.toml", ROOT / "board" / "pinmap.csv")
@@ -60,7 +72,7 @@ class PinMapValidationTests(unittest.TestCase):
             capture_output=True, text=True, check=False,
         )
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Vishay port blocked: phase-voltage sensing", result.stderr)
+        self.assertIn("Vishay port blocked: VDDA", result.stderr)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "hw.h"
+#include "../port/vesc/raik060_vesc.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -18,6 +19,14 @@ static unsigned regular[3][3];
 static unsigned injected[3][3];
 static unsigned regular_count, injected_count;
 static float delay_seconds;
+static unsigned encoder_start_calls;
+static raik060_vesc_config_t encoder_config;
+
+bool raik060_vesc_start(const raik060_vesc_config_t *config) {
+    encoder_config = *config;
+    ++encoder_start_calls;
+    return true;
+}
 
 void RCC_AHB1PeriphClockCmd(uint32_t clocks, int enable) {
     assert(enable == ENABLE);
@@ -89,6 +98,7 @@ static void test_gpio_ownership(void) {
     assert(levels[GPIOC][7] && !levels[GPIOC][6]);
     assert(levels[GPIOC][9] && !levels[GPIOC][10]);
     assert(!levels[GPIOD][2]);
+    assert(encoder_start_calls == 0); /* Initialization must not guess the frame. */
 }
 
 static void test_adc_layout_and_scaling(void) {
@@ -135,6 +145,10 @@ int main(void) {
     test_gpio_ownership();
     test_adc_layout_and_scaling();
     test_encoder_bus_pins();
+    assert(hw_vishay_start_encoder(RAIK060_FRAME_MULTI_TURN));
+    assert(encoder_config.frame_kind == RAIK060_FRAME_MULTI_TURN);
+    assert(encoder_config.consecutive_errors_before_fault == 1U);
+    assert(encoder_config.max_sample_age_us == 1000U);
     puts("Vishay GPIO ownership, ADC ordering, nominal scaling and SPI bus tests passed");
     return 0;
 }

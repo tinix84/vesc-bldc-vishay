@@ -41,7 +41,9 @@ Each rank enters DMA memory in ADC1, ADC2, ADC3 order.
 All three injected ranks sample current channels 10/11/12 through ADC1/ADC2/ADC3.
 This provisional layout excludes channels 0/1/2 and 14.
 It does not provide phase-voltage or motor-temperature measurements.
-The hardware build remains blocked because the VESC motor code requires additional measurements and configuration.
+The restricted encoder-only core no longer requires phase-voltage measurements.
+The hardware build remains blocked by VDDA and the unresolved configuration and protection requirements.
+Read [the encoder-only profile](ENCODER_ONLY_FOC.md) for control behavior and restrictions.
 
 ## Build guard and disabled functions
 
@@ -49,7 +51,8 @@ The hardware build remains blocked because the VESC motor code requires addition
 There is no build flag that approves the unresolved hardware.
 `ENABLE_GATE()` also holds PB5 low, and initialization keeps all six PWM pads as inputs.
 Host tests compile the GPIO/ADC implementation through a simulated HAL boundary.
-They do not compile or validate a complete motor firmware image.
+An ARM reference build checks the complete restricted core with phase ADC identifiers deliberately invalid.
+It does not validate the Vishay hardware target.
 
 The implementation does not call `drv8301_init()`.
 The pinned implementation writes an overcurrent-disable configuration during initialization.
@@ -58,8 +61,8 @@ The code does not copy VESC6 shutdown control, NTC beta, phase ADC inputs, or mo
 
 ## Remaining requirements
 
-1. Establish phase-voltage sensing or review a complete motor-control alternative.
-2. Restore and verify the VDDA supply feed.
+1. Review and bench-validate the implemented encoder-only motor-control alternative.
+2. Verify the VDDA supply and continuity on the actual board without changing the schematic.
 3. Resolve the schematic/PCB connectivity differences against the original Altium design.
 4. Confirm the RAIK060 ordering code and single-turn or multi-turn frame.
 5. Specify the PCB NTC curve and motor-temperature strategy.
@@ -77,8 +80,8 @@ The existing board has GPIO SPI wiring and no verified BiSS-C differential inter
 Its delay callback uses the pinned VESC `timer_sleep()` API.
 The bus reads PC4 and leaves PC8 high impedance for position-only transfers.
 
-After confirming the sensor frame, pass this bus to `raik060_vesc_start()` through a `raik060_vesc_config_t`.
-Add `src/raik060.c` and `port/vesc/raik060_vesc.c` to the firmware source list.
+After confirming the sensor frame, call `hw_vishay_start_encoder(frame_kind)` before motor initialization.
+The public fork includes the protocol, adapter, and policy sources in the firmware source list.
 Select `SENSOR_PORT_MODE_CUSTOM_ENCODER` and verify startup, CRC errors, direction, and sampling behavior before motor operation.
 The adapter and motor-control integration still require bench validation.
 

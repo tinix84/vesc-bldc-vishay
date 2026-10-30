@@ -6,7 +6,7 @@
 #include "hw_vishay_core.h"
 
 /* There is no override: the remaining requirements need a reviewed design. */
-#error "Vishay port blocked: phase-voltage sensing, VDDA/parity, NTC curve and power-stage limits require review"
+#error "Vishay port blocked: VDDA, sensor/thermal configuration and protection limits remain unverified"
 
 #endif
 

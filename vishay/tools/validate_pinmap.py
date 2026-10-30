@@ -74,6 +74,11 @@ def validate(project: dict, rows: list[dict[str, str]], allow_tbd: bool) -> list
             errors.append(f"{signal}: duplicate signal row")
         by_signal[signal] = row
     required = set(CORE_SIGNALS)
+    profile = project.get("control", {}).get("profile", "standard")
+    if profile == "encoder_only_foc":
+        required.difference_update({"phase_u_voltage", "phase_v_voltage", "phase_w_voltage"})
+    elif profile != "standard":
+        errors.append(f"unsupported control profile: {profile}")
     protocol = str(project.get("raik060", {}).get("protocol", "TBD")).lower()
 
     if protocol in PROTOCOL_SIGNALS:
@@ -114,6 +119,8 @@ def validate(project: dict, rows: list[dict[str, str]], allow_tbd: bool) -> list
         for field in ("phase_voltage_sensing_available", "vdda_feed_verified",
                       "schematic_pcb_parity_verified", "shutdown_behavior_verified",
                       "power_stage_limits_verified"):
+            if field == "phase_voltage_sensing_available" and profile == "encoder_only_foc":
+                continue
             if project.get("hardware_review", {}).get(field) is False:
                 errors.append(f"board/project.toml: hardware_review.{field} is not verified")
         sensor = project.get("raik060", {})
