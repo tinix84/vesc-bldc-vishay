@@ -53,6 +53,7 @@ float encoder_read_deg_multiturn(void);
 void encoder_set_deg(float deg);
 encoder_type_t encoder_is_configured(void);
 bool encoder_index_found(void);
+bool encoder_custom_is_valid(void);
 void encoder_reset_multiturn(void);
 void encoder_reset_errors(void);
 float encoder_get_error_rate(void);

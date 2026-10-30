@@ -741,6 +741,11 @@ __attribute__((section(".text2"))) bool conf_general_detect_motor_param(float cu
  */
 __attribute__((section(".text2"))) bool conf_general_measure_flux_linkage(float current, float duty,
 		float min_erpm, float res, float *linkage) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)current; (void)duty; (void)min_erpm; (void)res; (void)linkage;
+    DISABLE_GATE();
+    return false;
+#else
 
 	mc_configuration *mcconf = mempools_alloc_mcconf();
 	mc_configuration *mcconf_old = mempools_alloc_mcconf();
@@ -897,6 +902,8 @@ __attribute__((section(".text2"))) bool conf_general_measure_flux_linkage(float 
 	mempools_free_mcconf(mcconf_old);
 
 	return true;
+#endif
+
 }
 
 /* Calculate DTG register */
@@ -968,6 +975,14 @@ __attribute__((section(".text2"))) int conf_general_measure_flux_linkage_openloo
 		float erpm_per_sec, float res, float ind, float *linkage,
 		float *linkage_undriven, float *undriven_samples, bool *result,
 		float *enc_offset, float *enc_ratio, bool *enc_inverted) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)current; (void)duty; (void)erpm_per_sec; (void)res; (void)ind;
+    (void)linkage; (void)linkage_undriven; (void)undriven_samples;
+    (void)enc_offset; (void)enc_ratio; (void)enc_inverted;
+    if (result) *result = false;
+    DISABLE_GATE();
+    return FAULT_CODE_ENCODER_FAULT;
+#else
 
 	*result = false;
 	int fault = FAULT_CODE_NONE;
@@ -1313,6 +1328,8 @@ __attribute__((section(".text2"))) int conf_general_measure_flux_linkage_openloo
 	mempools_free_mcconf(mcconf);
 	mempools_free_mcconf(mcconf_old);
 	return fault;
+#endif
+
 }
 
 /**
@@ -1737,6 +1754,11 @@ static void detect_sensors_task(void *arg) {
  */
 int conf_general_detect_apply_all_foc(float max_power_loss,
 									  bool store_mcconf_on_success, bool send_mcconf_on_success) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)max_power_loss; (void)store_mcconf_on_success; (void)send_mcconf_on_success;
+    DISABLE_GATE();
+    return -100 - FAULT_CODE_ENCODER_FAULT;
+#else
 	int result = -1;
 
 	int faultM1 = FAULT_CODE_NONE;
@@ -2098,6 +2120,8 @@ int conf_general_detect_apply_all_foc(float max_power_loss,
 	mc_interface_select_motor_thread(motor_last);
 
 	return result;
+#endif
+
 }
 
 /**
@@ -2136,6 +2160,11 @@ int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss,
 										  float min_current_in, float max_current_in,
 										  float openloop_rpm, float sl_erpm,
 										  void(*reply_func)(unsigned char* data, unsigned int len)) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)detect_can; (void)max_power_loss; (void)min_current_in; (void)max_current_in; (void)openloop_rpm; (void)sl_erpm; (void)reply_func;
+    DISABLE_GATE();
+    return -100 - FAULT_CODE_ENCODER_FAULT;
+#else
 
 	int motor_last = mc_interface_get_motor_thread();
 	mc_interface_select_motor_thread(1);
@@ -2276,4 +2305,6 @@ int conf_general_detect_apply_all_foc_can(bool detect_can, float max_power_loss,
 	mc_interface_select_motor_thread(motor_last);
 
 	return res;
+#endif
+
 }

@@ -3221,6 +3221,10 @@ static lbm_value ext_raw_adc_current(lbm_value *args, lbm_uint argn) {
  * args[2]: Use raw ADC values. Optional argument.
  */
 static lbm_value ext_raw_adc_voltage(lbm_value *args, lbm_uint argn) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)args; (void)argn;
+    return ENC_SYM_EERROR;
+#else
 	LBM_CHECK_NUMBER_ALL();
 
 	if (argn != 2 && argn != 3) {
@@ -3262,6 +3266,8 @@ static lbm_value ext_raw_adc_voltage(lbm_value *args, lbm_uint argn) {
 	case 3: return lbm_enc_float(Vc);
 	default: return ENC_SYM_EERROR;
 	}
+#endif
+
 }
 
 static lbm_value ext_raw_mod_alpha(lbm_value *args, lbm_uint argn) {

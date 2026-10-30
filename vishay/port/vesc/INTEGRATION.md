@@ -1,61 +1,105 @@
-# VESC integration seam
+# Vishay hardware integration
 
-This fork starts from upstream commit `4b4dd3062dcbb3dbdd188b8dd2d3e6b88ad69da8`.
-Keep board-specific support under `vishay/`. The intended upstream-compatible seam is a
-new `hwconf/vishay` target plus, only if the SPI RAIK060 is selected, the small
-driver in this repository.
+Status: **provisional implementation; motor firmware build blocked**.
+The user confirmed on 2026-10-29 that the reviewed board has no newer revision.
+The firmware baseline is VESC commit `4b4dd3062dcbb3dbdd188b8dd2d3e6b88ad69da8`.
 
-## Preferred path: RAIK060 BiSS-C
+## Implemented configuration
 
-Current VESC firmware already implements `SENSOR_PORT_MODE_BISSC`. Select an
-18-bit, single-turn RAIK060 BiSS-C part and provide the RS-422 line driver and
-receiver required by the sensor. Populate VESC's `HW_SPI_*` macros and set
-`m_encoder_counts` to 18 in the motor configuration. The existing VESC driver
-uses SCK and MISO for the physical link, but its configuration also reserves
-MOSI and NSS pins; keep a complete SPI peripheral available until bench tests
-prove a smaller mapping.
+`hwconf/hw_vishay_core.h` contains the supported pin and nominal scaling definitions.
+`hwconf/hw_vishay_vesc.c` implements GPIO initialization, ADC channel setup, and the RAIK060 GPIO SPI bus callbacks.
 
-The existing driver does not expose the RAIK060 multi-turn counter. Treat
-multi-turn BiSS-C as new firmware work, not as a drop-in configuration.
+- STM32F405RGT7TR, LQFP64, with an 8 MHz crystal.
+- Gate enable PB5 stays low before and after GPIO initialization.
+- Gate fault uses PB7. No independent timer-break connection is established.
+- Driver SPI uses PC10 clock, PB3 MISO, PB4 MOSI, and PC9 chip select.
+- Encoder SPI uses PC6 clock, PC7 chip select, PC8 MOSI, and PC4 MISO.
+- Three current inputs use PC0/PC1/PC2 and ADC channels 10/11/12.
+- Nominal current scaling uses 2 mOhm shunts and gain-20 AD8418A amplifiers.
+- Nominal bus scaling uses R16=39.2k and R20=2.2k. Q1 requires transfer calibration.
+- PA3 samples the PCB NTC. Its resistance conversion uses the reviewed high-side divider.
+- PA0/PA1 remain digital inputs. PC4 remains encoder MISO.
+- PA7 stays an input because it shares a COMM net with PB10.
+- PC5 remains a shutdown-sense ADC input. Supply hold/release control is unverified.
+- BMI270, independent motor halls, and motor-temperature conversion remain unavailable.
 
-## Fallback path: RAIK060 SPI
+All GPIO assignments remain provisional until source connectivity and schematic/PCB parity are resolved.
+The worksheet includes MCU pad numbers, PCB net names, and verification status for each assigned GPIO.
+No source CAD export accompanies the public firmware support.
 
-`vishay/src/raik060.c` implements the simple read-only 28-bit and 44-bit frames from
-the Vishay datasheet, including CRC-8 and status handling. The VESC adapter in
-`vishay/port/vesc/raik060_vesc.c` samples it in a thread and registers VESC's existing
-custom-encoder callbacks.
+## ADC scan
 
-To integrate after the hardware target exists:
+The regular scan has three ranks across three ADCs.
+Each rank enters DMA memory in ADC1, ADC2, ADC3 order.
 
-1. Add `vishay/src/raik060.c` and `vishay/port/vesc/raik060_vesc.c` to `ENCSRC` in a small
-   upstream patch, and add the `vishay/include` directory to `INC`.
-2. In `hw_init_gpio()`, configure dedicated CS, SCLK and MISO pins, create a
-   `raik060_vesc_config_t`, and call `raik060_vesc_start()` once.
-3. Set the motor sensor port mode to `SENSOR_PORT_MODE_CUSTOM_ENCODER` and the
-   FOC sensor mode to encoder in VESC Tool.
-4. Keep MOSI routed if register access, offset programming, air-gap check or
-   self-calibration commands are wanted. It is not needed for simple position
-   frames.
-5. Verify CRC, direction, electrical zero, sampling jitter and fault behavior
-   on a current-limited bench before enabling the power stage.
+| Rank | ADC1 | ADC2 | ADC3 | DMA indices |
+|---|---|---|---|---|
+| 1 | PC0 current A, channel 10 | PC1 current B, channel 11 | PC2 current C, channel 12 | 0, 1, 2 |
+| 2 | PA5 external input, channel 5 | PA6 external input, channel 6 | PA3 PCB NTC, channel 3 | 3, 4, 5 |
+| 3 | Vrefint, channel 17 | PC5 shutdown, channel 15 | PC3 bus voltage, channel 13 | 6, 7, 8 |
 
-The portable driver uses one-microsecond half periods by default in the adapter
-example (about 500 kHz after software overhead), within the RAIK060's specified
-100 kHz to 3 MHz range. The first-clock delay is at least 5 us and the default
-sample period is 100 us.
+All three injected ranks sample current channels 10/11/12 through ADC1/ADC2/ADC3.
+This provisional layout excludes channels 0/1/2 and 14.
+It does not provide phase-voltage or motor-temperature measurements.
+The restricted encoder-only core no longer requires phase-voltage measurements.
+The hardware build remains blocked by VDDA and the unresolved configuration and protection requirements.
+Read [the encoder-only profile](ENCODER_ONLY_FOC.md) for control behavior and restrictions.
 
-## Local VESC build command
+## Build guard and disabled functions
 
-Once `hw_vishay_vesc.c/.h` are complete, build without modifying upstream's
-board list:
+`hw_vishay_vesc.h` contains an unconditional build error.
+There is no build flag that approves the unresolved hardware.
+`ENABLE_GATE()` also holds PB5 low, and initialization keeps all six PWM pads as inputs.
+Host tests compile the GPIO/ADC implementation through a simulated HAL boundary.
+An ARM reference build checks the complete restricted core with phase ADC identifiers deliberately invalid.
+It does not validate the Vishay hardware target.
+
+The implementation does not call `drv8301_init()`.
+The pinned implementation writes an overcurrent-disable configuration during initialization.
+The driver protection sequence needs review before gate activation or register initialization.
+The code does not copy VESC6 shutdown control, NTC beta, phase ADC inputs, or motor-temperature aliases.
+
+## Remaining requirements
+
+1. Review and bench-validate the implemented encoder-only motor-control alternative.
+2. Verify the VDDA supply and continuity on the actual board without changing the schematic.
+3. Resolve the schematic/PCB connectivity differences against the original Altium design.
+4. Confirm the RAIK060 ordering code and single-turn or multi-turn frame.
+5. Specify the PCB NTC curve and motor-temperature strategy.
+6. Approve voltage, current, temperature, regeneration, and gate-protection limits.
+7. Verify current polarity, ADC reference, bus transfer, and filter settling on hardware.
+8. Confirm physical SWD access, shutdown behavior, and COMM peripheral ownership.
+
+Do not substitute digital input values or constants for missing phase-voltage measurements.
+Do not infer permitted board current from the amplifier rail range.
+
+## Encoder integration after review
+
+The existing board has GPIO SPI wiring and no verified BiSS-C differential interface.
+`hw_vishay_raik060_bus()` returns the board-specific GPIO callbacks with a 1 us half-period.
+Its delay callback uses the pinned VESC `timer_sleep()` API.
+The bus reads PC4 and leaves PC8 high impedance for position-only transfers.
+
+After confirming the sensor frame, call `hw_vishay_start_encoder(frame_kind)` before motor initialization.
+The public fork includes the protocol, adapter, and policy sources in the firmware source list.
+Select `SENSOR_PORT_MODE_CUSTOM_ENCODER` and verify startup, CRC errors, direction, and sampling behavior before motor operation.
+The adapter and motor-control integration still require bench validation.
+
+## Validation
+
+From the support directory, run:
 
 ```sh
-make fw_custom \
-  HW_SRC="$PWD/vishay/port/vesc/hwconf/hw_vishay_vesc.c" \
-  HW_HEADER="$PWD/vishay/port/vesc/hwconf/hw_vishay_vesc.h"
+cmake -S . -B build/host
+cmake --build build/host
+ctest --test-dir build/host --output-on-failure
+python3 -m unittest discover -s tests -p "test_*.py"
+python3 tools/validate_pinmap.py --allow-tbd
 ```
 
-After successful bring-up, move the target under upstream
-`hwconf/vishay/`. That makes the hardware discoverable by the VESC build and is
-the natural shape for a pull request and eventual firmware packaging.
+The host tests check gate-disable ordering, pin ownership, ADC ordering, nominal scaling, and encoder bus pins.
+Python tests verify required-signal checks, duplicate detection, release blockers, and the firmware build guard.
+Strict pin validation must fail while the recorded blockers remain open.
+A passing draft check confirms worksheet structure only.
 
+The board has not been flashed, powered, or commissioned by this implementation.

@@ -17,6 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "../vishay/port/vesc/encoder_only_foc.h"
+
 #include "foc_math.h"
 #include "utils_math.h"
 #include "hw.h"
@@ -577,6 +579,11 @@ void foc_run_pid_control_speed(bool index_found, float dt, motor_all_state_t *mo
 
 float foc_correct_encoder(float obs_angle, float enc_angle, float speed,
 							 float sl_erpm, motor_all_state_t *motor) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)obs_angle; (void)speed; (void)sl_erpm;
+    motor->m_using_encoder = true;
+    return enc_angle;
+#else
 	float rpm_abs = fabsf(RADPS2RPM_f(speed));
 
 	// Hysteresis 5 % of total speed
@@ -592,6 +599,8 @@ float foc_correct_encoder(float obs_angle, float enc_angle, float speed,
 	}
 
 	return motor->m_using_encoder ? enc_angle : obs_angle;
+#endif
+
 }
 
 float foc_correct_hall(float angle, float dt, motor_all_state_t *motor, int hall_val) {

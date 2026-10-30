@@ -1,13 +1,25 @@
-name: Vishay host validation
+name: Vishay firmware validation
 
 on:
   push:
     paths:
       - 'vishay/**'
+      - 'motor/**'
+      - 'encoder/**'
+      - 'hwconf/**'
+      - 'conf_general.c'
+      - 'datatypes.h'
+      - 'lispBM/lispif_vesc_extensions.c'
       - '.github/workflows/vishay-host.yml'
   pull_request:
     paths:
       - 'vishay/**'
+      - 'motor/**'
+      - 'encoder/**'
+      - 'hwconf/**'
+      - 'conf_general.c'
+      - 'datatypes.h'
+      - 'lispBM/lispif_vesc_extensions.c'
       - '.github/workflows/vishay-host.yml'
   workflow_dispatch:
 
@@ -27,3 +39,27 @@ jobs:
       - run: ctest --test-dir build/vishay-host --output-on-failure
       - run: python -m unittest discover -s vishay/tests -p "test_*.py"
       - run: python vishay/tools/validate_pinmap.py --project vishay/board/project.toml --pinmap vishay/board/pinmap.csv --allow-tbd
+
+  arm-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Arm compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=arm-gnu-toolchain-14.3.rel1-x86_64-arm-none-eabi.tar.xz
+          curl --fail --location --retry 3 "https://developer.arm.com/-/media/Files/downloads/gnu/14.3.rel1/binrel/$archive" --output "$RUNNER_TEMP/$archive"
+          echo "8f6903f8ceb084d9227b9ef991490413014d991874a1e34074443c2a72b14dbd  $RUNNER_TEMP/$archive" | sha256sum --check
+          tar -xf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP"
+          echo "ARM_SDK_DIR=$RUNNER_TEMP/arm-gnu-toolchain-14.3.rel1-x86_64-arm-none-eabi" >> "$GITHUB_ENV"
+      - name: Compile restricted profile without phase ADC inputs (never flash)
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/encoder-only/custom/.dep"
+          make -j2 fw_custom BUILD_DIR="$RUNNER_TEMP/encoder-only" DEPPATH="$RUNNER_TEMP/encoder-only/custom/.dep" ARM_SDK_DIR="$ARM_SDK_DIR" HW_SRC="$GITHUB_WORKSPACE/vishay/tests/arm_smoke/hw_encoder_only_smoke.c" HW_HEADER="$GITHUB_WORKSPACE/vishay/tests/arm_smoke/hw_encoder_only_smoke.h"
+      - name: Compile standard VESC6 MK3 regression target
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/standard/60_mk3/.dep"
+          make -j2 fw_60_mk3 BUILD_DIR="$RUNNER_TEMP/standard" DEPPATH="$RUNNER_TEMP/standard/60_mk3/.dep" ARM_SDK_DIR="$ARM_SDK_DIR"

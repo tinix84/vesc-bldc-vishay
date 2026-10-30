@@ -177,6 +177,10 @@ float virtual_motor_get_angle_deg(void){
  * @param Vbus: Bus voltage in Volts
  */
 static void connect_virtual_motor(float ml , float J, float Vbus){
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)ml; (void)J; (void)Vbus;
+    commands_printf("Virtual motor unavailable in encoder-only FOC profile");
+#else
 	if(virtual_motor.connected == false){
 		//first we send 0.0 current command to make system stop PWM outputs
 		mcpwm_foc_set_current(0.0);
@@ -239,6 +243,8 @@ static void connect_virtual_motor(float ml , float J, float Vbus){
 	virtual_motor.ml = ml;
 
 	virtual_motor.connected = true;
+#endif
+
 }
 
 /**
@@ -386,10 +392,13 @@ static inline void run_virtual_motor_park_clark_inverse( void ){
 #ifdef HW_HAS_3_SHUNTS
 	ADC_Value[ ADC_IND_CURR3 ] =  virtual_motor.ic / FAC_CURRENT + 2048;
 #endif
+
+#ifndef HW_ENCODER_ONLY_FOC
 	//	simulate voltage samples
 	ADC_Value[ ADC_IND_SENS1 ] = virtual_motor.va * VOLTAGE_TO_ADC_FACTOR + 2048;
 	ADC_Value[ ADC_IND_SENS2 ] = virtual_motor.vb * VOLTAGE_TO_ADC_FACTOR + 2048;
 	ADC_Value[ ADC_IND_SENS3 ] = virtual_motor.vc * VOLTAGE_TO_ADC_FACTOR + 2048;
+#endif
 }
 
 /**

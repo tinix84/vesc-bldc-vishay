@@ -169,6 +169,10 @@ static volatile bool timer_thd_stop;
 static volatile bool rpm_thd_stop;
 
 void mcpwm_init(volatile mc_configuration *configuration) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)configuration;
+    DISABLE_GATE();
+#else
 	utils_sys_lock_cnt();
 
 	init_done= false;
@@ -451,6 +455,8 @@ void mcpwm_init(volatile mc_configuration *configuration) {
 	tachometer = 0;
 	tachometer_abs = 0;
 	init_done = true;
+#endif
+
 }
 
 void mcpwm_deinit(void) {
@@ -1457,6 +1463,9 @@ static THD_FUNCTION(timer_thread, arg) {
 }
 
 void mcpwm_adc_inj_int_handler(void) {
+#ifdef HW_ENCODER_ONLY_FOC
+    DISABLE_GATE();
+#else
 	uint32_t t_start = timer_time_now();
 
 	float curr0 = HW_GET_INJ_CURR1();
@@ -1750,12 +1759,18 @@ void mcpwm_adc_inj_int_handler(void) {
 			CURR_FIR_TAPS_BITS, current_fir_index);
 
 	last_inj_adc_isr_duration = timer_seconds_elapsed_since(t_start);
+#endif
+
 }
 
 /*
  * New ADC samples ready. Do commutation!
  */
 void mcpwm_adc_int_handler(void *p, uint32_t flags) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)p; (void)flags;
+    DISABLE_GATE();
+#else
 	(void)p;
 	(void)flags;
 
@@ -2130,6 +2145,8 @@ void mcpwm_adc_int_handler(void *p, uint32_t flags) {
 	}
 
 	last_adc_isr_duration = timer_seconds_elapsed_since(t_start);
+#endif
+
 }
 
 void mcpwm_set_detect(void) {
