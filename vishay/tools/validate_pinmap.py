@@ -65,8 +65,20 @@ def load_inputs(project_path: Path, pinmap_path: Path) -> tuple[dict, list[dict[
 
 def validate(project: dict, rows: list[dict[str, str]], allow_tbd: bool) -> list[str]:
     errors: list[str] = []
-    by_signal = {row.get("signal", "").strip(): row for row in rows}
+    by_signal = {}
+    for row in rows:
+        signal = row.get("signal", "").strip()
+        if not signal:
+            errors.append("signal name is blank")
+        elif signal in by_signal:
+            errors.append(f"{signal}: duplicate signal row")
+        by_signal[signal] = row
     required = set(CORE_SIGNALS)
+    profile = project.get("control", {}).get("profile", "standard")
+    if profile == "encoder_only_foc":
+        required.difference_update({"phase_u_voltage", "phase_v_voltage", "phase_w_voltage"})
+    elif profile != "standard":
+        errors.append(f"unsupported control profile: {profile}")
     protocol = str(project.get("raik060", {}).get("protocol", "TBD")).lower()
 
     if protocol in PROTOCOL_SIGNALS:
@@ -84,7 +96,7 @@ def validate(project: dict, rows: list[dict[str, str]], allow_tbd: bool) -> list
     assigned: defaultdict[str, list[str]] = defaultdict(list)
     for signal, row in by_signal.items():
         pin = row.get("pin", "").strip().upper()
-        if signal in required and pin in {"", "TBD"} and not allow_tbd:
+        if signal in required and pin in {"", "TBD", "NC"} and not allow_tbd:
             errors.append(f"{signal}: required pin is still {pin or 'blank'}")
             continue
         if pin in {"", "TBD", "NC"}:
@@ -92,8 +104,8 @@ def validate(project: dict, rows: list[dict[str, str]], allow_tbd: bool) -> list
         if not PIN_PATTERN.fullmatch(pin):
             errors.append(f"{signal}: unsupported MCU pin syntax '{pin}' (expected e.g. PA8)")
         assigned[pin].append(signal)
-        if signal in required and not row.get("peripheral", "").strip():
-            errors.append(f"{signal}: peripheral/resource is blank")
+        if signal in required and row.get("peripheral", "").strip().upper() in {"", "TBD", "NC"}:
+            errors.append(f"{signal}: peripheral/resource is unresolved")
 
     for pin, signals in sorted(assigned.items()):
         if len(signals) > 1:
@@ -102,6 +114,25 @@ def validate(project: dict, rows: list[dict[str, str]], allow_tbd: bool) -> list
     for field in ("mcu", "mcu_package", "power_stage_voltage_max", "phase_current_max"):
         if str(project.get(field, "TBD")).upper() == "TBD" and not allow_tbd:
             errors.append(f"board/project.toml: {field} is still TBD")
+
+    if not allow_tbd:
+        for field in ("phase_voltage_sensing_available", "vdda_feed_verified",
+                      "schematic_pcb_parity_verified", "shutdown_behavior_verified",
+                      "power_stage_limits_verified"):
+            if field == "phase_voltage_sensing_available" and profile == "encoder_only_foc":
+                continue
+            if project.get("hardware_review", {}).get(field) is False:
+                errors.append(f"board/project.toml: hardware_review.{field} is not verified")
+        sensor = project.get("raik060", {})
+        if "ordering_code" in sensor and str(sensor["ordering_code"]).upper() in {"", "TBD"}:
+            errors.append("board/project.toml: raik060.ordering_code is still TBD")
+        if sensor.get("frame_kind_verified") is False:
+            errors.append("board/project.toml: RAIK060 frame kind is not verified")
+        analog = project.get("analog", {})
+        if analog.get("bus_transfer_calibrated") is False:
+            errors.append("board/project.toml: bus-voltage transfer is not calibrated")
+        if "pcb_ntc_beta" in analog and str(analog["pcb_ntc_beta"]).upper() in {"", "TBD"}:
+            errors.append("board/project.toml: PCB NTC curve is still TBD")
 
     return errors
 

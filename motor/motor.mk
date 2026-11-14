@@ -7,3 +7,5 @@ CSRC += \
 	
 INCDIR += motor
 
+
+CSRC += vishay/port/vesc/encoder_only_foc.c

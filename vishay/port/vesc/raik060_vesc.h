@@ -14,6 +14,7 @@ typedef struct {
     uint32_t sample_period_us;
     uint32_t startup_delay_ms;
     uint32_t consecutive_errors_before_fault;
+    uint32_t max_sample_age_us;
 } raik060_vesc_config_t;
 
 /*

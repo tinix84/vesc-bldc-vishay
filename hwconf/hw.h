@@ -22,6 +22,9 @@
 
 #include "stm32f4xx_conf.h"
 #include HW_HEADER
+#if defined(HW_ENCODER_ONLY_FOC) && (defined(HW_HAS_DUAL_MOTORS) || defined(HW_HAS_DUAL_PARALLEL) || !defined(HW_HAS_3_SHUNTS))
+#error "Encoder-only FOC requires a single motor with three current shunts"
+#endif
 
 #ifdef HW_HAS_DRV8301
 #include "drv8301.h"

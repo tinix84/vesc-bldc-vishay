@@ -64,6 +64,9 @@ static bool (*m_enc_custom_fault)(void) = NULL;
 static char* (*m_enc_custom_print_info)(void) = NULL;
 
 bool encoder_init(volatile mc_configuration *conf) {
+#ifdef HW_ENCODER_ONLY_FOC
+    if (conf->m_sensor_port_mode != SENSOR_PORT_MODE_CUSTOM_ENCODER) return false;
+#endif
 	bool res = false;
 
 	if (m_encoder_type_now != ENCODER_TYPE_NONE) {
@@ -586,6 +589,11 @@ void encoder_set_deg(float deg) {
 
 encoder_type_t encoder_is_configured(void) {
 	return m_encoder_type_now;
+}
+
+bool encoder_custom_is_valid(void) {
+    return m_encoder_type_now == ENCODER_TYPE_CUSTOM && m_enc_custom_read_deg &&
+            m_enc_custom_fault && !m_enc_custom_fault() && isfinite(m_enc_custom_read_deg());
 }
 
 bool encoder_index_found(void) {

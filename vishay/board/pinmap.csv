@@ -1,44 +1,54 @@
-signal,requirement,pin,peripheral,electrical,connector,notes
-pwm_u_high,core,TBD,TBD,3.3V push-pull,,Advanced timer complementary PWM with dead-time and break
-pwm_u_low,core,TBD,TBD,3.3V push-pull,,Same advanced timer as all phase PWM signals
-pwm_v_high,core,TBD,TBD,3.3V push-pull,,Advanced timer complementary PWM with dead-time and break
-pwm_v_low,core,TBD,TBD,3.3V push-pull,,Same advanced timer as all phase PWM signals
-pwm_w_high,core,TBD,TBD,3.3V push-pull,,Advanced timer complementary PWM with dead-time and break
-pwm_w_low,core,TBD,TBD,3.3V push-pull,,Same advanced timer as all phase PWM signals
-gate_enable,core,TBD,GPIO,3.3V push-pull,,Must default safely off during reset
-gate_fault,core,TBD,GPIO/EXTI,Check gate-driver level,,Prefer timer break input where possible
-current_u,core,TBD,ADC injected,Analog 0-3.3V,,Simultaneous/current-control ADC group
-current_v,core,TBD,ADC injected,Analog 0-3.3V,,Simultaneous/current-control ADC group
-current_w,core,TBD,ADC injected,Analog 0-3.3V,,Third shunt strongly recommended
-phase_u_voltage,core,TBD,ADC,Analog 0-3.3V,,Divider and filtering must match VESC macros
-phase_v_voltage,core,TBD,ADC,Analog 0-3.3V,,Divider and filtering must match VESC macros
-phase_w_voltage,core,TBD,ADC,Analog 0-3.3V,,Divider and filtering must match VESC macros
-dc_bus_voltage,core,TBD,ADC,Analog 0-3.3V,,Divider must tolerate maximum bus voltage and transients
-mosfet_temperature,core,TBD,ADC,Analog 0-3.3V,,Place near hottest MOSFET
-motor_temperature,recommended,TBD,ADC,Analog 0-3.3V,motor,Support common NTC/PTC options
-can_rx,core,TBD,CAN_RX,3.3V logic,CAN,Use CAN transceiver and termination option
-can_tx,core,TBD,CAN_TX,3.3V logic,CAN,Use CAN transceiver and termination option
-usb_dm,core,TBD,USB_DM,USB 2.0 FS,USB,Keep controlled differential routing
-usb_dp,core,TBD,USB_DP,USB 2.0 FS,USB,Keep controlled differential routing
-swdio,core,TBD,SWDIO,3.3V,debug,Do not consume during first bring-up
-swclk,core,TBD,SWCLK,3.3V,debug,Do not consume during first bring-up
-hall_1,if_halls,TBD,GPIO/timer,Input with correct level shifting,motor,Keep separate from encoder pins for simultaneous diagnostics
-hall_2,if_halls,TBD,GPIO/timer,Input with correct level shifting,motor,Keep separate from encoder pins for simultaneous diagnostics
-hall_3,if_halls,TBD,GPIO/timer,Input with correct level shifting,motor,Keep separate from encoder pins for simultaneous diagnostics
-raik060_biss_clock,if_bissc,TBD,SPI_SCK,3.3V logic to RS-422 driver,RAIK060,MA differential pair is on sensor side of transceiver
-raik060_biss_data,if_bissc,TBD,SPI_MISO,3.3V logic from RS-422 receiver,RAIK060,SLO differential pair is on sensor side of transceiver
-raik060_biss_mosi_reserve,if_bissc,TBD,SPI_MOSI,3.3V logic,,Reserved by current VESC BiSS-C configuration
-raik060_biss_nss_reserve,if_bissc,TBD,SPI_NSS,3.3V push-pull,,Reserved by current VESC BiSS-C configuration
-raik060_spi_clock,if_spi,TBD,SPI_SCK or GPIO,3.3V LVTTL,RAIK060,100 kHz to 3 MHz mode 1
-raik060_spi_data_in,if_spi,TBD,SPI_MISO or GPIO,3.3V LVTTL,RAIK060,Sensor MISO
-raik060_spi_chip_select,if_spi,TBD,SPI_NSS or GPIO,3.3V LVTTL,RAIK060,Active low
-raik060_spi_data_out,recommended,TBD,SPI_MOSI or GPIO,3.3V LVTTL,RAIK060,Optional for simple reads but needed for commands and registers
-uart_tx,recommended,TBD,USART_TX,3.3V logic,COMM,Expose with ground and protected supply
-uart_rx,recommended,TBD,USART_RX,3.3V logic,COMM,Expose with ground and protected supply
-adc_external_1,recommended,TBD,ADC,Analog 0-3.3V,COMM,Protected general-purpose analogue input
-adc_external_2,recommended,TBD,ADC,Analog 0-3.3V,COMM,Protected general-purpose analogue input
-i2c_scl,recommended,TBD,I2C_SCL,3.3V open-drain,AUX,Optional IMU or expansion bus
-i2c_sda,recommended,TBD,I2C_SDA,3.3V open-drain,AUX,Optional IMU or expansion bus
-estop_brake,recommended,TBD,GPIO/EXTI,Protected digital input,AUX,Independent torque-inhibit or brake input
-status_led,recommended,TBD,GPIO,3.3V push-pull,,Bring-up and fault indication
-
+signal,requirement,pin,peripheral,electrical,connector,notes,mcu_pad,pcb_net,verification
+pwm_u_high,core,PA8,TIM1_CH1,3.3V push-pull,,U1.41 -> DRV8301 INH_A; PWM stays input pending review,41,GDRVCTRL.INH_A,provisional; PCB extraction checked; schematic parity unresolved
+pwm_u_low,core,PB13,TIM1_CH1N,3.3V push-pull,,U1.34 -> DRV8301 INL_A; PWM stays input pending review,34,GDRVCTRL.INL_A,provisional; PCB extraction checked; schematic parity unresolved
+pwm_v_high,core,PA9,TIM1_CH2,3.3V push-pull,,U1.42 -> DRV8301 INH_B; PWM stays input pending review,42,GDRVCTRL.INH_B,provisional; PCB extraction checked; schematic parity unresolved
+pwm_v_low,core,PB14,TIM1_CH2N,3.3V push-pull,,U1.35 -> DRV8301 INL_B; PWM stays input pending review,35,GDRVCTRL.INL_B,provisional; PCB extraction checked; schematic parity unresolved
+pwm_w_high,core,PA10,TIM1_CH3,3.3V push-pull,,U1.43 -> DRV8301 INH_C; PWM stays input pending review,43,GDRVCTRL.INH_C,provisional; PCB extraction checked; schematic parity unresolved
+pwm_w_low,core,PB15,TIM1_CH3N,3.3V push-pull,,U1.36 -> DRV8301 INL_C; PWM stays input pending review,36,GDRVCTRL.INL_C,provisional; PCB extraction checked; schematic parity unresolved
+gate_enable,core,PB5,GPIO output active high,3.3V push-pull,,R23 10k pulldown; software holds low; no gate enable available,57,EN_GATE,provisional; PCB extraction checked; schematic parity unresolved
+gate_fault,core,PB7,GPIO input active low,Check gate-driver level,,U1.59 -> DRV8301 nFAULT; not a verified TIM1 break path,59,FAULT,provisional; PCB extraction checked; schematic parity unresolved
+current_u,core,PC0,ADC123_IN10,Analog 0-3.3V,,R34-36 2mOhm; AD8418A gain20; polarity and PCB parity unverified,8,CURR.CURR_A,provisional; PCB extraction checked; schematic parity unresolved
+current_v,core,PC1,ADC123_IN11,Analog 0-3.3V,,R34-36 2mOhm; AD8418A gain20; polarity and PCB parity unverified,9,CURR.CURR_B,provisional; PCB extraction checked; schematic parity unresolved
+current_w,core,PC2,ADC123_IN12,Analog 0-3.3V,,R34-36 2mOhm; AD8418A gain20; polarity and PCB parity unverified,10,CURR.CURR_C,provisional; PCB extraction checked; schematic parity unresolved
+phase_u_voltage,core,NC,NC,Analog 0-3.3V,,No phase-voltage ADC path established; PA0/PA1 are DIN and PA2 is unconnected; blocks firmware,,,not established by reviewed board
+phase_v_voltage,core,NC,NC,Analog 0-3.3V,,No phase-voltage ADC path established; PA0/PA1 are DIN and PA2 is unconnected; blocks firmware,,,not established by reviewed board
+phase_w_voltage,core,NC,NC,Analog 0-3.3V,,No phase-voltage ADC path established; PA0/PA1 are DIN and PA2 is unconnected; blocks firmware,,,not established by reviewed board
+dc_bus_voltage,core,PC3,ADC123_IN13,Analog 0-3.3V,,R16 39.2k / R20 2.2k via Q1; nominal ratio only,11,VSNS_SUPPLY,provisional; PCB extraction checked; schematic parity unresolved
+mosfet_temperature,core,PA3,ADC123_IN3,Analog 0-3.3V; PCB NTC,,RT3 high-side 10k NTC and R37 10k; beta and thermal coupling unverified,17,ADC_TEMP,provisional; PCB extraction checked; schematic parity unresolved
+motor_temperature,recommended,NC,NC,Analog 0-3.3V,motor,No verified motor-temperature input; PC4 belongs to encoder MISO,,,not established by reviewed board
+can_rx,core,PB8,CAN1_RX AF9,3.3V logic,CAN,Use CAN transceiver and termination option,61,CAN_RX,provisional; PCB extraction checked; schematic parity unresolved
+can_tx,core,PB9,CAN1_TX AF9,3.3V logic,CAN,Use CAN transceiver and termination option,62,CAN_TX,provisional; PCB extraction checked; schematic parity unresolved
+usb_dm,core,PA11,USB_OTG_FS_DM AF10,USB 2.0 FS,USB,Keep controlled differential routing,44,USB.USB_DM,provisional; PCB extraction checked; schematic parity unresolved
+usb_dp,core,PA12,USB_OTG_FS_DP AF10,USB 2.0 FS,USB,Keep controlled differential routing,45,USB.USB_DP,provisional; PCB extraction checked; schematic parity unresolved
+swdio,core,PA13,SWDIO,3.3V,debug,J6 placeholder absent on PCB; physical access unverified,46,SWD.SWDIO,provisional; PCB extraction checked; schematic parity unresolved
+swclk,core,PA14,SWCLK,3.3V,debug,J6 placeholder absent on PCB; physical access unverified,49,SWCLK,provisional; PCB extraction checked; schematic parity unresolved
+hall_1,if_halls,NC,NC,Input with correct level shifting,motor,No separate halls; PC6/PC7/PC8 belong to encoder SPI,,,not established by reviewed board
+hall_2,if_halls,NC,NC,Input with correct level shifting,motor,No separate halls; PC6/PC7/PC8 belong to encoder SPI,,,not established by reviewed board
+hall_3,if_halls,NC,NC,Input with correct level shifting,motor,No separate halls; PC6/PC7/PC8 belong to encoder SPI,,,not established by reviewed board
+raik060_biss_clock,if_bissc,NC,NC,3.3V logic to RS-422 driver,RAIK060,No RS-422 physical layer or hardware SPI mapping evidenced,,,not established by reviewed board
+raik060_biss_data,if_bissc,NC,NC,3.3V logic from RS-422 receiver,RAIK060,No RS-422 physical layer or hardware SPI mapping evidenced,,,not established by reviewed board
+raik060_biss_mosi_reserve,if_bissc,NC,NC,3.3V logic,,No RS-422 physical layer or hardware SPI mapping evidenced,,,not established by reviewed board
+raik060_biss_nss_reserve,if_bissc,NC,NC,3.3V push-pull,,No RS-422 physical layer or hardware SPI mapping evidenced,,,not established by reviewed board
+raik060_spi_clock,if_spi,PC6,GPIO software SPI mode 1,3.3V LVTTL,RAIK060,J4.2; exact RAIK060 ordering code and frame length unverified,37,ENC_SCLK,provisional; PCB extraction checked; schematic parity unresolved
+raik060_spi_data_in,if_spi,PC4,GPIO input,3.3V LVTTL,RAIK060,U1.24 ENC_MISO; cannot also be motor-temperature ADC,24,ENC_MISO,provisional; PCB extraction checked; schematic parity unresolved
+raik060_spi_chip_select,if_spi,PC7,GPIO active low,3.3V LVTTL,RAIK060,J4.3; idle high before output configuration,38,ENC_nCS,provisional; PCB extraction checked; schematic parity unresolved
+raik060_spi_data_out,recommended,PC8,GPIO input reserved for MOSI commands,3.3V LVTTL,RAIK060,J4.4; simple reads do not require MOSI output,39,ENC_MOSI,provisional; PCB extraction checked; schematic parity unresolved
+uart_tx,recommended,PB10,USART3_TX AF7,3.3V logic,COMM,PB10 shares COMM net with PA7; PA7 must stay input,29,COMM.TX_SCL_MOSI,provisional; PCB extraction checked; schematic parity unresolved
+uart_rx,recommended,PB11,USART3_RX AF7,3.3V logic,COMM,Shares COMM resource with I2C2; no simultaneous ownership,30,COMM.RX_SDA_NSS,provisional; PCB extraction checked; schematic parity unresolved
+adc_external_1,recommended,PA5,ADC12_IN5,Analog 0-3.3V,COMM,Protected general-purpose analogue input,21,COMM.SCK_ADC_EXT,provisional; PCB extraction checked; schematic parity unresolved
+adc_external_2,recommended,PA6,ADC12_IN6,Analog 0-3.3V,COMM,Protected general-purpose analogue input,22,COMM.MISO_ADC_EXT2,provisional; PCB extraction checked; schematic parity unresolved
+i2c_scl,recommended,PB2,GPIO bitbang BMI270 disabled,3.3V open-drain,AUX,BMI270 SDO is floating; device support absent in pinned firmware,28,SCL,provisional; PCB extraction checked; schematic parity unresolved
+i2c_sda,recommended,PA15,GPIO bitbang BMI270 disabled,3.3V open-drain,AUX,Correct board map is PB2=SCL and PA15=SDA; keep IMU disabled,50,SDA,provisional; PCB extraction checked; schematic parity unresolved
+estop_brake,recommended,NC,NC,Protected digital input,AUX,No independent torque-inhibit input verified; do not assume DIN provides one,,,not established by reviewed board
+status_led,recommended,PB0,GPIO green LED,3.3V push-pull,,Bring-up and fault indication,26,LED_GREEN,provisional; PCB extraction checked; schematic parity unresolved
+gate_spi_clock,recommended,PC10,GPIO software SPI clock,3.3V logic; verify source circuit,,Provisional imported-board assignment; schematic/PCB parity remains open,51,SPI3.SCLK,provisional; PCB extraction checked; schematic parity unresolved
+gate_spi_miso,recommended,PB3,GPIO input,3.3V logic; verify source circuit,,Provisional imported-board assignment; schematic/PCB parity remains open,55,SPI3.MISO,provisional; PCB extraction checked; schematic parity unresolved
+gate_spi_mosi,recommended,PB4,GPIO software SPI output,3.3V logic; verify source circuit,,Provisional imported-board assignment; schematic/PCB parity remains open,56,SPI3.MOSI,provisional; PCB extraction checked; schematic parity unresolved
+gate_spi_chip_select,recommended,PC9,GPIO active low,3.3V logic; verify source circuit,,Provisional imported-board assignment; schematic/PCB parity remains open,40,SPI3.CS,provisional; PCB extraction checked; schematic parity unresolved
+current_filter,recommended,PD2,GPIO switch control,3.3V logic; verify source circuit,,TS5A3166 switched 15nF plus fixed 1nF; polarity/settling require bench verification,54,CURR.CURR_FILTER,provisional; PCB extraction checked; schematic parity unresolved
+shutdown_sense,recommended,PC5,ADC12_IN15,3.3V logic; verify source circuit,,Read-only ADC; supply hold/release behavior not implemented,25,ADC_15,provisional; PCB extraction checked; schematic parity unresolved
+digital_input_1,recommended,PA0,GPIO input,3.3V logic; verify source circuit,,Provisional imported-board assignment; schematic/PCB parity remains open,14,DIN1,provisional; PCB extraction checked; schematic parity unresolved
+digital_input_2,recommended,PA1,GPIO input,3.3V logic; verify source circuit,,Provisional imported-board assignment; schematic/PCB parity remains open,15,DIN2,provisional; PCB extraction checked; schematic parity unresolved
+status_led_red,recommended,PB1,GPIO red LED,3.3V logic; verify source circuit,,Provisional imported-board assignment; schematic/PCB parity remains open,27,LED_RED,provisional; PCB extraction checked; schematic parity unresolved
+servo_input,recommended,PB6,TIM4_CH1 AF2,3.3V logic; verify source circuit,,Provisional imported-board assignment; schematic/PCB parity remains open,58,SERVO,provisional; PCB extraction checked; schematic parity unresolved
+comm_shared_pa7,recommended,PA7,GPIO input only,3.3V logic; verify source circuit,,Same PCB net as PB10; keep high impedance for UART3/I2C2 use,23,COMM.TX_SCL_MOSI,provisional; PCB extraction checked; schematic parity unresolved

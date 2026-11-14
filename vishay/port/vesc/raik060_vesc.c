@@ -4,13 +4,15 @@
 
 #include "ch.h"
 #include "encoder/encoder.h"
+#include "hw.h"
 
 #include <stdio.h>
 
 #define RAIK060_VESC_THREAD_STACK 384U
 #define RAIK060_DEFAULT_SAMPLE_PERIOD_US 100U
 #define RAIK060_DEFAULT_STARTUP_DELAY_MS 160U
-#define RAIK060_DEFAULT_ERROR_LIMIT 5U
+#define RAIK060_DEFAULT_ERROR_LIMIT 1U
+#define RAIK060_DEFAULT_MAX_SAMPLE_AGE_US 1000U
 
 static raik060_vesc_config_t active_config;
 static volatile float last_angle_degrees;
@@ -19,7 +21,8 @@ static volatile uint32_t bad_crc_samples;
 static volatile uint32_t sensor_error_samples;
 static volatile uint32_t consecutive_errors;
 static volatile raik060_result_t last_result = RAIK060_BAD_ARGUMENT;
-static bool started;
+static volatile bool started;
+static volatile systime_t last_good_sample_time;
 
 static THD_WORKING_AREA(raik060_thread_area, RAIK060_VESC_THREAD_STACK);
 
@@ -28,8 +31,9 @@ static float read_degrees(void) {
 }
 
 static bool has_fault(void) {
-    return started &&
-           consecutive_errors >= active_config.consecutive_errors_before_fault;
+    return !started || good_samples == 0U ||
+           consecutive_errors >= active_config.consecutive_errors_before_fault ||
+           chVTTimeElapsedSinceX(last_good_sample_time) >= US2ST(active_config.max_sample_age_us);
 }
 
 static char *print_info(void) {
@@ -60,10 +64,11 @@ static THD_FUNCTION(raik060_thread, argument) {
         last_result = result;
         if (result == RAIK060_OK) {
             last_angle_degrees = raik060_position_degrees(sample.position);
-            ++good_samples;
+            last_good_sample_time = chVTGetSystemTimeX();
+            if (good_samples != UINT32_MAX) ++good_samples;
             consecutive_errors = 0U;
         } else {
-            ++consecutive_errors;
+            if (consecutive_errors != UINT32_MAX) ++consecutive_errors;
             if (result == RAIK060_BAD_CRC) {
                 ++bad_crc_samples;
             } else if (result == RAIK060_SENSOR_ERROR) {
@@ -78,11 +83,15 @@ static THD_FUNCTION(raik060_thread, argument) {
 bool raik060_vesc_start(const raik060_vesc_config_t *config) {
     if (config == NULL || started || config->bus.write_chip_select == NULL ||
         config->bus.write_clock == NULL || config->bus.read_data == NULL ||
-        config->bus.delay_us == NULL) {
+        config->bus.delay_us == NULL ||
+        (config->frame_kind != RAIK060_FRAME_SINGLE_TURN && config->frame_kind != RAIK060_FRAME_MULTI_TURN)) {
         return false;
     }
 
     active_config = *config;
+#ifdef HW_ENCODER_ONLY_FOC
+    active_config.consecutive_errors_before_fault = 1U;
+#endif
     if (active_config.sample_period_us == 0U) {
         active_config.sample_period_us = RAIK060_DEFAULT_SAMPLE_PERIOD_US;
     }
@@ -92,6 +101,10 @@ bool raik060_vesc_start(const raik060_vesc_config_t *config) {
     if (active_config.consecutive_errors_before_fault == 0U) {
         active_config.consecutive_errors_before_fault = RAIK060_DEFAULT_ERROR_LIMIT;
     }
+    if (active_config.max_sample_age_us == 0U) {
+        active_config.max_sample_age_us = RAIK060_DEFAULT_MAX_SAMPLE_AGE_US;
+    }
+    if (US2ST(active_config.max_sample_age_us) == 0U) return false;
 
     encoder_set_custom_callbacks(read_degrees, has_fault, print_info);
     started = chThdCreateStatic(

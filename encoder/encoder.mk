@@ -15,3 +15,6 @@ ENCSRC =	encoder/encoder.c \
 			encoder/enc_amt22.c
 
 ENCINC =	encoder
+
+ENCSRC += vishay/src/raik060.c vishay/port/vesc/raik060_vesc.c
+ENCINC += vishay/include

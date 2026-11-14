@@ -20,6 +20,8 @@
 #pragma GCC push_options
 #pragma GCC optimize ("Os")
 
+#include "../vishay/port/vesc/encoder_only_foc.h"
+
 #include "mc_interface.h"
 #include "mcpwm.h"
 #include "mcpwm_foc.h"
@@ -166,6 +168,10 @@ static thread_t *fault_stop_tp;
 static THD_WORKING_AREA(stat_thread_wa, 512);
 static THD_FUNCTION(stat_thread, arg);
 
+#ifdef HW_ENCODER_ONLY_FOC
+static volatile bool encoder_only_configuration_ok;
+#endif
+
 void mc_interface_init(bool reset_conf) {
 	memset((void*)&m_motor_1, 0, sizeof(motor_if_state_t));
 #ifdef HW_HAS_DUAL_MOTORS
@@ -191,6 +197,10 @@ void mc_interface_init(bool reset_conf) {
 	m_motor_2.m_conf.motor_type = MOTOR_TYPE_FOC;
 #endif
 
+#ifdef HW_ENCODER_ONLY_FOC
+    encoder_only_configuration_ok = encoder_only_foc_config_valid(&m_motor_1.m_conf);
+    encoder_only_foc_restrict_config(&m_motor_1.m_conf);
+#endif
 	m_last_adc_duration_sample = 0.0;
 	m_sample_len = 1000;
 	m_sample_int = 1;
@@ -318,6 +328,16 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 }
 
 void mc_interface_set_configuration(mc_configuration *configuration) {
+#ifdef HW_ENCODER_ONLY_FOC
+    if (!encoder_only_foc_config_valid(configuration)) {
+        DISABLE_GATE();
+        if (mcpwm_foc_init_done()) mcpwm_foc_stop_pwm(false);
+        mc_interface_set_fault_info("Unsupported encoder-only FOC configuration", 0, 0.0f, 0.0f);
+        mc_interface_fault_stop(FAULT_CODE_ENCODER_FAULT, false, false);
+        return;
+    }
+    encoder_only_configuration_ok = true;
+#endif
 	volatile motor_if_state_t *motor = motor_now();
 
 #if defined HW_HAS_DUAL_PARALLEL
@@ -1505,6 +1525,10 @@ float mc_interface_get_last_sample_adc_isr_duration(void) {
 
 void mc_interface_sample_print_data(debug_sampling_mode mode, uint16_t len, uint8_t decimation, bool raw, 
 		void(*reply_func)(unsigned char *data, unsigned int len)) {
+#ifdef HW_ENCODER_ONLY_FOC
+    (void)mode; (void)len; (void)decimation; (void)raw; (void)reply_func;
+    m_sample_mode = DEBUG_SAMPLING_OFF;
+#else
 
 	send_func_sample = reply_func;
 
@@ -1527,6 +1551,8 @@ void mc_interface_sample_print_data(debug_sampling_mode mode, uint16_t len, uint
 		m_sample_is_second_motor = motor_now() == &m_motor_2;
 #endif
 	}
+#endif
+
 }
 
 /**
@@ -1817,6 +1843,13 @@ void mc_interface_override_temp_motor(float temp) {
  *
  */
 int mc_interface_try_input(void) {
+#ifdef HW_ENCODER_ONLY_FOC
+    if (!encoder_only_configuration_ok || !encoder_only_foc_config_valid(&motor_now()->m_conf) ||
+            !encoder_custom_is_valid() || !mcpwm_foc_is_dccal_done()) {
+        DISABLE_GATE();
+        return 1;
+    }
+#endif
 	// TODO: Remove this later
 	if (mc_interface_get_state() == MC_STATE_DETECTING) {
 		mcpwm_stop_pwm();
@@ -2140,6 +2173,7 @@ __attribute__((aligned(16))) void mc_interface_mc_timer_isr(bool is_second_motor
 		break;
 	}
 
+#ifndef HW_ENCODER_ONLY_FOC
 	if (sample) {
 		static int a = 0;
 		a++;
@@ -2217,6 +2251,11 @@ __attribute__((aligned(16))) void mc_interface_mc_timer_isr(bool is_second_motor
 			m_last_adc_duration_sample = mc_interface_get_last_inj_adc_isr_duration();
 		}
 	}
+
+#else
+    (void)sample;
+    m_sample_mode = DEBUG_SAMPLING_OFF;
+#endif
 
 	FOC_PROFILE_LINE_FINE()
 }

@@ -1,13 +1,39 @@
-status = "draft"
+status = "provisional"
 board_name = "Vishay VESC"
-mcu = "TBD"
-mcu_package = "TBD"
+mcu = "STM32F405RGT7TR"
+mcu_package = "LQFP64"
 power_stage_voltage_max = "TBD"
 phase_current_max = "TBD"
 
+[control]
+profile = "encoder_only_foc"
+observer_fallback = false
+phase_voltage_measurements = false
+gates_enabled = false
+
 [raik060]
-# Choose exactly one of: "bissc", "spi". BiSS-C is recommended for a new board.
-protocol = "TBD"
+# Board wiring supports GPIO SPI. Confirm the purchased sensor before sampling.
+protocol = "spi"
+ordering_code = "TBD"
+frame_kind_verified = false
 multiturn = false
-coexist_with_motor_halls = true
+coexist_with_motor_halls = false
+
+[analog]
+adc_reference_nominal_v = 3.3
+current_shunt_ohm = 0.002
+current_amplifier_gain = 20.0
+bus_upper_resistor_ohm = 39200.0
+bus_lower_resistor_ohm = 2200.0
+bus_transfer_calibrated = false
+pcb_ntc_beta = "TBD"
+motor_temperature_available = false
+
+[hardware_review]
+phase_voltage_sensing_available = false
+vdda_feed_verified = false
+schematic_pcb_parity_verified = false
+shutdown_behavior_verified = false
+power_stage_limits_verified = false
+imu_enabled = false
 
